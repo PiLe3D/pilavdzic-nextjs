@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Uhvati Nasihu, Nadiju i Mersy - Mobilna Verzija</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #controls {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+        }
+        .control-box {
+            background: rgba(255,255,255,0.9);
+            padding: 8px 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        #score {
+            color: #667eea;
+        }
+        #prisonCount {
+            color: #ff1493;
+        }
+        #gameContainer {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        #gameCanvas {
+            border: 3px solid white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            background: #90EE90;
+            max-width: 100%;
+            max-height: 100%;
+            cursor: pointer;
+        }
+        #winScreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        #winScreen.show {
+            display: flex;
+        }
+        .win-box {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 90%;
+        }
+        .win-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #10b981;
+            margin-bottom: 15px;
+        }
+        .win-text {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        #restartBtn {
+            background: #667eea;
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #instructions {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.9);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            text-align: center;
+            animation: fadeOut 5s forwards;
+            pointer-events: none;
+        }
+        @keyframes fadeOut {
+            0%, 80% { opacity: 1; }
+            100% { opacity: 0; pointer-events: none; }
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <div class="control-box">
+            <span id="score">Uhvaćeno: 0</span>
+        </div>
+        <div class="control-box">
+            <span id="prisonCount">Zatvor: 0/3</span>
+        </div>
+    </div>
+    
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="instructions">
+            👆🖱️ Dodirni/Klikni i vuci da uhvatiš!<br>
+            Baci ih u ZATVOR (donji lijevi ugao)
+        </div>
+    </div>
+    
+    <div id="winScreen">
+        <div class="win-box">
+            <div class="win-title">🎉 POBJEDA! 🎉</div>
+            <div class="win-text">Sve si uhvatio u zatvor!</div>
+            <button id="restartBtn">Igraj Ponovo</button>
+        </div>
+    </div>
+
+    <script>
+        var canvas = document.getElementById('gameCanvas');
+        var ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            var container = document.getElementById('gameContainer');
+            var maxWidth = container.clientWidth - 20;
+            var maxHeight = container.clientHeight - 20;
+            
+            var ratio = 4 / 3;
+            var width = maxWidth;
+            var height = width / ratio;
+            
+            if (height > maxHeight) {
+                height = maxHeight;
+                width = height * ratio;
+            }
+            
+            canvas.width = Math.min(width, 600);
+            canvas.height = canvas.width / ratio;
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        var score = 0;
+        var gameWon = false;
+        var touchX = canvas.width / 2;
+        var touchY = canvas.height / 2;
+        var dragging = null;
+        var dragOffsetX = 0;
+        var dragOffsetY = 0;
+        var particles = [];
+        
+        var prison = {
+            x: 30,
+            y: canvas.height - 110,
+            width: 80,
+            height: 80,
+            inmates: []
+        };
+
+        function Particle(x, y, color) {
+            this.x = x;
+            this.y = y;
+            this.vx = (Math.random() - 0.5) * 5;
+            this.vy = (Math.random() - 0.5) * 5;
+            this.size = Math.random() * 4 + 2;
+            this.color = color;
+            this.life = 1;
+        }
+
+        Particle.prototype.update = function() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += 0.2;
+            this.life -= 0.02;
+            this.size *= 0.96;
+        };
+
+        Particle.prototype.draw = function() {
+            ctx.globalAlpha = this.life;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        };
+
+        function Girl(name, color, hairColor, x, y, scale) {
+            this.name = name;
+            this.color = color;
+            this.hairColor = hairColor;
+            this.x = x;
+            this.y = y;
+            this.vx = 0;
+            this.vy = 0;
+            this.size = 20 * scale;
+            this.speed = 1;
+            this.scale = scale;
+            this.state = 'running';
+            this.angle = 0;
+            this.angryTimer = 0;
+            this.animTime = 0;
+            this.expression = 'happy';
+            this.throwVx = 0;
+            this.throwVy = 0;
+            this.inPrison = false;
+            this.prisonTimer = 0;
+            this.randomAngle = Math.random() * Math.PI * 2;
+        }
+
+        Girl.prototype.runAway = function() {
+            if (this.state !== 'running') return;
+            
+            if (this.inPrison) {
+                this.prisonTimer++;
+                
+                if (this.prisonTimer > 600) {
+                    this.inPrison = false;
+                    this.prisonTimer = 0;
+                    var idx = prison.inmates.indexOf(this);
+                    if (idx > -1) prison.inmates.splice(idx, 1);
+                    updatePrisonCount();
+                }
+                
+                this.x = prison.x + prison.width / 2 + Math.sin(this.animTime) * 10;
+                this.y = prison.y + prison.height / 2 + Math.cos(this.animTime) * 10;
+                return;
+            }
+
+            this.randomAngle += (Math.random() - 0.5) * 0.2;
+            
+            var dx = this.x - touchX;
+            var dy = this.y - touchY;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 100) {
+                this.vx = (dx / dist) * this.speed;
+                this.vy = (dy / dist) * this.speed;
+            } else {
+                this.vx = Math.cos(this.randomAngle) * this.speed * 0.5;
+                this.vy = Math.sin(this.randomAngle) * this.speed * 0.5;
+            }
+
+            this.x += this.vx;
+            this.y += this.vy;
+
+            if (this.x < this.size) {
+                this.x = this.size;
+                this.vx = Math.abs(this.vx);
+                this.randomAngle = Math.random() * Math.PI * 2;
+            }
+            if (this.x > canvas.width - this.size) {
+                this.x = canvas.width - this.size;
+                this.vx = -Math.abs(this.vx);
+                this.randomAngle = Math.random() * Math.PI * 2;
+            }
+            if (this.y < this.size) {
+                this.y = this.size;
+                this.vy = Math.abs(this.vy);
+                this.randomAngle = Math.random() * Math.PI * 2;
+            }
+            if (this.y > canvas.height - this.size) {
+                this.y = canvas.height - this.size;
+                this.vy = -Math.abs(this.vy);
+                this.randomAngle = Math.random() * Math.PI * 2;
+            }
+        };
+
+        Girl.prototype.checkCatch = function(mx, my) {
+            if (this.state !== 'running') return false;
+            var dx = this.x - mx;
+            var dy = this.y - my;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            return dist < this.size + 15;
+        };
+
+        Girl.prototype.throwGirl = function(vx, vy) {
+            this.state = 'thrown';
+            this.throwVx = vx;
+            this.throwVy = vy;
+            this.expression = 'surprised';
+            this.inPrison = false;
+            
+            var idx = prison.inmates.indexOf(this);
+            if (idx > -1) {
+                prison.inmates.splice(idx, 1);
+                updatePrisonCount();
+            }
+            
+            for (var i = 0; i < 10; i++) {
+                particles.push(new Particle(this.x, this.y, this.color));
+            }
+        };
+
+        Girl.prototype.updateThrown = function() {
+            this.x += this.throwVx;
+            this.y += this.throwVy;
+            this.throwVy += 0.4;
+            this.angle += 0.2;
+
+            if (this.x > prison.x && this.x < prison.x + prison.width &&
+                this.y > prison.y && this.y < prison.y + prison.height) {
+                
+                this.inPrison = true;
+                this.prisonTimer = 0;
+                if (prison.inmates.indexOf(this) === -1) {
+                    prison.inmates.push(this);
+                }
+                this.state = 'running';
+                this.expression = 'angry';
+                this.angle = 0;
+                this.throwVx = 0;
+                this.throwVy = 0;
+                score++;
+                updateScore();
+                updatePrisonCount();
+                
+                for (var i = 0; i < 15; i++) {
+                    particles.push(new Particle(this.x, this.y, '#ffaa00'));
+                }
+                
+                if (prison.inmates.length === 3) {
+                    gameWon = true;
+                    showWinScreen();
+                }
+                return;
+            }
+
+            if (this.x < this.size || this.x > canvas.width - this.size) {
+                this.throwVx *= -0.6;
+                this.x = Math.max(this.size, Math.min(canvas.width - this.size, this.x));
+                
+                for (var i = 0; i < 5; i++) {
+                    particles.push(new Particle(this.x, this.y, '#ffff00'));
+                }
+            }
+
+            if (this.y < this.size || this.y > canvas.height - this.size) {
+                this.throwVy *= -0.6;
+                this.throwVx *= 0.8;
+                this.y = Math.max(this.size, Math.min(canvas.height - this.size, this.y));
+                
+                for (var i = 0; i < 5; i++) {
+                    particles.push(new Particle(this.x, this.y, '#ffff00'));
+                }
+            }
+
+            if (Math.abs(this.throwVx) < 0.5 && Math.abs(this.throwVy) < 0.5 && this.y >= canvas.height - this.size - 5) {
+                this.state = 'angry';
+                this.angryTimer = 180;
+                this.angle = 0;
+                this.throwVx = 0;
+                this.throwVy = 0;
+                this.expression = 'angry';
+                score++;
+                updateScore();
+            }
+        };
+
+        Girl.prototype.updateAngry = function() {
+            this.angryTimer--;
+            this.x += Math.sin(this.angryTimer * 0.5) * 1;
+            
+            if (this.angryTimer <= 0) {
+                this.state = 'running';
+                this.expression = 'happy';
+            }
+        };
+
+        Girl.prototype.update = function() {
+            this.animTime += 0.15;
+
+            if (this.state === 'running') {
+                this.runAway();
+            } else if (this.state === 'thrown') {
+                this.updateThrown();
+            } else if (this.state === 'angry') {
+                this.updateAngry();
+            } else if (this.state === 'caught') {
+                this.expression = 'surprised';
+            }
+        };
+
+        Girl.prototype.draw = function() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            
+            if (this.state === 'thrown') {
+                ctx.rotate(this.angle);
+            }
+
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.beginPath();
+            ctx.arc(0, this.size + 3, this.size * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(0, 3, this.size * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+
+            var armSwing = Math.sin(this.animTime * 2) * 0.5;
+            
+            ctx.strokeStyle = '#ffdbac';
+            ctx.lineWidth = 5 * this.scale;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(-this.size * 0.5, 0);
+            ctx.lineTo(-this.size * 0.8, -5 + armSwing * 15);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(this.size * 0.5, 0);
+            ctx.lineTo(this.size * 0.8, -5 - armSwing * 15);
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffdbac';
+            ctx.beginPath();
+            ctx.arc(0, -this.size * 0.6, this.size * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = this.hairColor;
+            ctx.beginPath();
+            ctx.arc(0, -this.size * 0.7, this.size * 0.65, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#000';
+            ctx.strokeStyle = '#000';
+            if (this.expression === 'angry') {
+                ctx.lineWidth = 2 * this.scale;
+                ctx.beginPath();
+                ctx.moveTo(-8 * this.scale, -this.size * 0.7);
+                ctx.lineTo(-4 * this.scale, -this.size * 0.6);
+                ctx.moveTo(-4 * this.scale, -this.size * 0.7);
+                ctx.lineTo(-8 * this.scale, -this.size * 0.6);
+                ctx.moveTo(4 * this.scale, -this.size * 0.7);
+                ctx.lineTo(8 * this.scale, -this.size * 0.6);
+                ctx.moveTo(8 * this.scale, -this.size * 0.7);
+                ctx.lineTo(4 * this.scale, -this.size * 0.6);
+                ctx.stroke();
+            } else if (this.expression === 'surprised') {
+                ctx.beginPath();
+                ctx.arc(-5 * this.scale, -this.size * 0.65, 3 * this.scale, 0, Math.PI * 2);
+                ctx.arc(5 * this.scale, -this.size * 0.65, 3 * this.scale, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.lineWidth = 1.5 * this.scale;
+                ctx.beginPath();
+                ctx.arc(-5 * this.scale, -this.size * 0.65, 4 * this.scale, 0.2, Math.PI - 0.2);
+                ctx.arc(5 * this.scale, -this.size * 0.65, 4 * this.scale, 0.2, Math.PI - 0.2);
+                ctx.stroke();
+            }
+
+            ctx.lineWidth = 2 * this.scale;
+            ctx.strokeStyle = '#000';
+            if (this.expression === 'angry') {
+                ctx.beginPath();
+                ctx.arc(0, -this.size * 0.4, 5 * this.scale, 0.3, Math.PI - 0.3);
+                ctx.stroke();
+            } else if (this.expression === 'surprised') {
+                ctx.beginPath();
+                ctx.arc(0, -this.size * 0.45, 3 * this.scale, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.beginPath();
+                ctx.arc(0, -this.size * 0.5, 5 * this.scale, 0, Math.PI);
+                ctx.stroke();
+            }
+
+            var legSwing = Math.sin(this.animTime * 3) * 8;
+            ctx.strokeStyle = '#ffdbac';
+            ctx.lineWidth = 4 * this.scale;
+            ctx.beginPath();
+            ctx.moveTo(-3 * this.scale, this.size * 0.8);
+            ctx.lineTo(-3 * this.scale, this.size * 1.2 + legSwing);
+            ctx.moveTo(3 * this.scale, this.size * 0.8);
+            ctx.lineTo(3 * this.scale, this.size * 1.2 - legSwing);
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.font = 'bold ' + (10 * this.scale) + 'px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(this.name, 0, this.size + 18);
+
+            ctx.restore();
+        };
+
+        var nasiha = new Girl('Nasiha', '#ff1493', '#8B4513', canvas.width * 0.3, canvas.height * 0.3, 1);
+        var nadija = new Girl('Nadija', '#9370db', '#654321', canvas.width * 0.6, canvas.height * 0.5, 1);
+        var mersy = new Girl('Mersy', '#4169e1', '#2c1810', canvas.width * 0.5, canvas.height * 0.6, 1.5);
+        var girls = [nasiha, nadija, mersy];
+
+        function drawFinger(x, y) {
+            if (!dragging) return;
+            
+            ctx.fillStyle = '#ffdbac';
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        function drawPrison() {
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 4;
+            ctx.fillStyle = 'rgba(100,100,100,0.3)';
+            ctx.fillRect(prison.x, prison.y, prison.width, prison.height);
+            ctx.strokeRect(prison.x, prison.y, prison.width, prison.height);
+            
+            for (var i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.moveTo(prison.x + 15 + i * 15, prison.y);
+                ctx.lineTo(prison.x + 15 + i * 15, prison.y + prison.height);
+                ctx.stroke();
+            }
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('ZATVOR', prison.x + prison.width / 2, prison.y - 5);
+            
+            if (prison.inmates.length > 0) {
+                var maxTimer = 0;
+                for (var i = 0; i < prison.inmates.length; i++) {
+                    if (prison.inmates[i].prisonTimer > maxTimer) {
+                        maxTimer = prison.inmates[i].prisonTimer;
+                    }
+                }
+                var timeLeft = Math.max(0, Math.ceil((600 - maxTimer) / 60));
+                ctx.fillStyle = timeLeft < 4 ? '#ff0000' : '#ffff00';
+                ctx.font = 'bold 24px Arial';
+                ctx.fillText(timeLeft, prison.x + prison.width / 2, prison.y + prison.height / 2);
+            }
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = 'Uhvaćeno: ' + score;
+        }
+
+        function updatePrisonCount() {
+            document.getElementById('prisonCount').textContent = 'Zatvor: ' + prison.inmates.length + '/3';
+        }
+
+        function showWinScreen() {
+            document.getElementById('winScreen').classList.add('show');
+        }
+
+        function restartGame() {
+            gameWon = false;
+            score = 0;
+            updateScore();
+            prison.inmates = [];
+            updatePrisonCount();
+            
+            nasiha.x = canvas.width * 0.3;
+            nasiha.y = canvas.height * 0.3;
+            nasiha.state = 'running';
+            nasiha.inPrison = false;
+            nasiha.prisonTimer = 0;
+            nasiha.expression = 'happy';
+            
+            nadija.x = canvas.width * 0.6;
+            nadija.y = canvas.height * 0.5;
+            nadija.state = 'running';
+            nadija.inPrison = false;
+            nadija.prisonTimer = 0;
+            nadija.expression = 'happy';
+            
+            mersy.x = canvas.width * 0.5;
+            mersy.y = canvas.height * 0.6;
+            mersy.state = 'running';
+            mersy.inPrison = false;
+            mersy.prisonTimer = 0;
+            mersy.expression = 'happy';
+            
+            document.getElementById('winScreen').classList.remove('show');
+        }
+
+        function getTouchPos(e) {
+            var rect = canvas.getBoundingClientRect();
+            var touch = e.touches[0] || e.changedTouches[0];
+            return {
+                x: (touch.clientX - rect.left) * (canvas.width / rect.width),
+                y: (touch.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        function getMousePos(e) {
+            var rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left) * (canvas.width / rect.width),
+                y: (e.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        // Touch events
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            var pos = getTouchPos(e);
+            touchX = pos.x;
+            touchY = pos.y;
+
+            for (var i = 0; i < girls.length; i++) {
+                if (girls[i].checkCatch(pos.x, pos.y)) {
+                    dragging = girls[i];
+                    dragging.state = 'caught';
+                    dragOffsetX = girls[i].x - pos.x;
+                    dragOffsetY = girls[i].y - pos.y;
+                    break;
+                }
+            }
+        });
+
+        canvas.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            var pos = getTouchPos(e);
+            touchX = pos.x;
+            touchY = pos.y;
+
+            if (dragging) {
+                dragging.x = pos.x + dragOffsetX;
+                dragging.y = pos.y + dragOffsetY;
+            }
+        });
+
+        canvas.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            if (dragging) {
+                var throwSpeed = 12;
+                dragging.throwGirl(
+                    (Math.random() - 0.5) * throwSpeed,
+                    -Math.random() * throwSpeed - 4
+                );
+                dragging = null;
+            }
+        });
+
+        // Mouse events
+        canvas.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            var pos = getMousePos(e);
+            touchX = pos.x;
+            touchY = pos.y;
+
+            for (var i = 0; i < girls.length; i++) {
+                if (girls[i].checkCatch(pos.x, pos.y)) {
+                    dragging = girls[i];
+                    dragging.state = 'caught';
+                    dragOffsetX = girls[i].x - pos.x;
+                    dragOffsetY = girls[i].y - pos.y;
+                    break;
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', function(e) {
+            e.preventDefault();
+            var pos = getMousePos(e);
+            touchX = pos.x;
+            touchY = pos.y;
+
+            if (dragging) {
+                dragging.x = pos.x + dragOffsetX;
+                dragging.y = pos.y + dragOffsetY;
+            }
+        });
+
+        canvas.addEventListener('mouseup', function(e) {
+            e.preventDefault();
+            if (dragging) {
+                var throwSpeed = 12;
+                dragging.throwGirl(
+                    (Math.random() - 0.5) * throwSpeed,
+                    -Math.random() * throwSpeed - 4
+                );
+                dragging = null;
+            }
+        });
+
+        document.getElementById('restartBtn').addEventListener('click', restartGame);
+
+        function gameLoop() {
+            ctx.fillStyle = '#90EE90';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#7CCD7C';
+            for (var i = 0; i < 15; i++) {
+                for (var j = 0; j < 15; j++) {
+                    if ((i + j) % 2 === 0) {
+                        var cellWidth = canvas.width / 15;
+                        var cellHeight = canvas.height / 15;
+                        ctx.fillRect(i * cellWidth, j * cellHeight, cellWidth, cellHeight);
+                    }
+                }
+            }
+
+            drawPrison();
+
+            for (var i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            for (var i = 0; i < girls.length; i++) {
+                girls[i].update();
+                girls[i].draw();
+            }
+
+            drawFinger(touchX, touchY);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>

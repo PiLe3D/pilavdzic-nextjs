@@ -39,6 +39,7 @@
             max-height: 100vh;
             position: relative;
             overflow: hidden;
+            cursor: none;
         }
         
         @media (min-width: 501px) {
@@ -51,6 +52,7 @@
                 height: 800px;
                 border-radius: 30px;
                 box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                cursor: none;
             }
         }
         
@@ -471,7 +473,7 @@
             gainNode.connect(audioCtx.destination);
             
             switch(type) {
-                case 'collect': // Sweet pickup sound
+                case 'collect':
                     oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
                     oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
                     gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
@@ -480,7 +482,7 @@
                     oscillator.stop(audioCtx.currentTime + 0.1);
                     break;
                     
-                case 'gift': // Happy gift sound
+                case 'gift':
                     oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
                     oscillator.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.15);
                     oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
@@ -490,18 +492,18 @@
                     oscillator.stop(audioCtx.currentTime + 0.3);
                     break;
                     
-                case 'love': // Romantic sound
+                case 'love':
                     oscillator.type = 'sine';
-                    oscillator.frequency.setValueAtTime(523, audioCtx.currentTime); // C5
-                    oscillator.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1); // E5
-                    oscillator.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2); // G5
+                    oscillator.frequency.setValueAtTime(523, audioCtx.currentTime);
+                    oscillator.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+                    oscillator.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
                     gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
                     gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
                     oscillator.start(audioCtx.currentTime);
                     oscillator.stop(audioCtx.currentTime + 0.4);
                     break;
                     
-                case 'excited': // Exciting sound
+                case 'excited':
                     oscillator.type = 'square';
                     for(let i = 0; i < 5; i++) {
                         const osc = audioCtx.createOscillator();
@@ -514,7 +516,7 @@
                         osc.start(audioCtx.currentTime + i * 0.05);
                         osc.stop(audioCtx.currentTime + i * 0.05 + 0.1);
                     }
-                    return; // Skip the main oscillator
+                    return;
             }
         }
         
@@ -555,16 +557,9 @@
                 gameState.mersy.y = 100;
             }
             
-            // Hide selection screen
             document.getElementById('playerSelection').classList.add('hidden');
-            
-            // Update shop display
             updateShopDisplay();
-            
-            // Update UI labels
             updateUILabels();
-            
-            // Start spawning
             startGame();
         }
         
@@ -597,17 +592,17 @@
             if (gameStarted) return;
             gameStarted = true;
             
-            // Spawn floating items
+            // 🔥 3× VIŠE SRCA/PARA - Spawn svakih 400ms umjesto 1200ms!
             spawnInterval = setInterval(() => {
-                if (Math.random() > 0.2) {
+                // 🔥 Spawn 3 itema odjednom umjesto 1!
+                for (let i = 0; i < 3; i++) {
                     const newItem = {
                         x: Math.random() * (canvas.width - 60) + 30,
-                        y: -30,
+                        y: -30 - (i * 60), // Spread them vertically
                         speed: 1.5 + Math.random() * 2.5,
                         wobble: Math.random() * Math.PI * 2
                     };
                     
-                    // If Mersy is playing, assign a random money symbol to each item
                     if (currentPlayer === 'mersy') {
                         const moneySymbols = ['💵', '💶', '💰', '🪙'];
                         newItem.symbol = moneySymbols[Math.floor(Math.random() * moneySymbols.length)];
@@ -615,34 +610,27 @@
                     
                     gameState.floatingHearts.push(newItem);
                 }
-            }, 1200);
+            }, 400); // 🔥 3× brže spawning!
             
             gameLoop();
         }
         
-        // Change player function - show confirmation
         function changePlayer() {
             document.getElementById('confirmDialog').classList.add('show');
         }
         
-        // Cancel change player
         function cancelChangePlayer() {
             document.getElementById('confirmDialog').classList.remove('show');
         }
         
-        // Confirm change player
         function confirmChangePlayer() {
-            // Hide confirmation dialog
             document.getElementById('confirmDialog').classList.remove('show');
-            
-            // Stop the game
             gameStarted = false;
             if (spawnInterval) {
                 clearInterval(spawnInterval);
                 spawnInterval = null;
             }
             
-            // Reset game state
             gameState.hearts = 0;
             gameState.loveLevel = 0;
             gameState.floatingHearts = [];
@@ -651,7 +639,6 @@
             gameState.mersy.emotion = 'neutral';
             currentPlayer = null;
             
-            // Close shop if open
             const shop = document.getElementById('shop');
             const toggle = document.getElementById('shopToggle');
             shop.classList.remove('open');
@@ -659,11 +646,9 @@
             const safeAreaBottom = getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)') || '0px';
             toggle.style.bottom = `max(10px, ${safeAreaBottom})`;
             
-            // Show player selection
             document.getElementById('playerSelection').classList.remove('hidden');
         }
         
-        // Initialize audio on first user interaction
         let audioInitialized = false;
         document.addEventListener('touchstart', () => {
             if (!audioInitialized) {
@@ -678,8 +663,8 @@
                 audioInitialized = true;
             }
         }, { once: true });
-        // Current player
-        let currentPlayer = null; // 'emir' or 'mersy'
+        
+        let currentPlayer = null;
         
         let gameState = {
             hearts: 0,
@@ -693,10 +678,14 @@
                 active: false,
                 x: 0,
                 y: 0
+            },
+            mouse: {
+                active: false,
+                x: 0,
+                y: 0
             }
         };
         
-        // Position Mersy based on canvas size
         function updateMersyPosition() {
             if (currentPlayer === 'emir') {
                 gameState.mersy.x = canvas.width - 80;
@@ -718,7 +707,7 @@
         
         const giftsForMersy = {
             chicken: { cost: 5, love: 10, emoji: '🍗', name: 'Pileci Fileti', messages: ['Mmm pileci! 🍗', 'Najbolji su! 😋', 'Volim te Mersy! 💕'], sound: 'gift' },
-            pizza: { cost: 10, love: 20, emoji: '🍕', name: 'Pizza Mersy', messages: ['PIZZA! 🍕', 'Moja omiljena! 😍', 'Tako si slatka! 💝'], sound: 'gift' },
+            pizza: { cost: 10, love: 20, emoji: '🍫', name: 'Pizza Mersy', messages: ['PIZZA! 🍕', 'Moja omiljena! 😍', 'Tako si slatka! 💝'], sound: 'gift' },
             massimo: { cost: 20, love: 35, emoji: '👗', name: 'Massimo Dutti', messages: ['MASSIMO! 👗', 'OMG NOVA HALJINA! 😱', 'Obozavam te! 💕'], sound: 'love' },
             massage: { cost: 30, love: 50, emoji: '💆', name: 'Masaza', messages: ['MASAZA! 💆', 'Tako mi treba! 😌', 'Najbolji si! 🌟'], sound: 'love' },
             scratch: { cost: 50, love: 80, emoji: '✋', name: 'Ceskanje', messages: ['CESKANJE! ✋', 'AHHH DA! 😊', 'NIKAD NE PRESTAJ! 💕'], sound: 'excited' },
@@ -727,19 +716,20 @@
         
         let currentGifts = giftsForEmir;
         
-        // Spawn floating hearts
-        setInterval(() => {
-            if (Math.random() > 0.2) {
-                gameState.floatingHearts.push({
-                    x: Math.random() * (canvas.width - 60) + 30,
-                    y: -30,
-                    speed: 1.5 + Math.random() * 2.5,
-                    wobble: Math.random() * Math.PI * 2
-                });
-            }
-        }, 1200);
+        // 🖱️ MIŠ KONTROLE - Novi kod!
+        canvas.addEventListener('mousemove', (e) => {
+            if (!currentPlayer) return;
+            const rect = canvas.getBoundingClientRect();
+            gameState.mouse.x = e.clientX - rect.left;
+            gameState.mouse.y = e.clientY - rect.top;
+            gameState.mouse.active = true;
+        });
         
-        // Direct touch controls - drag active player with your finger
+        canvas.addEventListener('mouseleave', () => {
+            gameState.mouse.active = false;
+        });
+        
+        // Touch controls
         canvas.addEventListener('touchstart', (e) => {
             const activePlayer = currentPlayer === 'emir' ? gameState.emir : gameState.mersy;
             const touch = e.touches[0];
@@ -747,7 +737,6 @@
             const touchX = touch.clientX - rect.left;
             const touchY = touch.clientY - rect.top;
             
-            // Check if touching near active player
             if (touchX >= activePlayer.x - 30 && 
                 touchX <= activePlayer.x + activePlayer.width + 30 &&
                 touchY >= activePlayer.y - 30 && 
@@ -790,13 +779,29 @@
             let moveX = 0;
             let moveY = 0;
             
-            // Keyboard controls
+            // Keyboard
             if (gameState.keys['ArrowLeft'] || gameState.keys['a']) moveX -= 1;
             if (gameState.keys['ArrowRight'] || gameState.keys['d']) moveX += 1;
             if (gameState.keys['ArrowUp'] || gameState.keys['w']) moveY -= 1;
             if (gameState.keys['ArrowDown'] || gameState.keys['s']) moveY += 1;
             
-            // Touch controls - move active player toward touch position
+            // 🖱️ MIŠ - Lik prati miša!
+            if (gameState.mouse.active && !gameState.touch.active) {
+                const targetX = gameState.mouse.x - activePlayer.width / 2;
+                const targetY = gameState.mouse.y - activePlayer.height / 2;
+                
+                const deltaX = targetX - activePlayer.x;
+                const deltaY = targetY - activePlayer.y;
+                
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                if (distance > 5) {
+                    moveX += (deltaX / distance);
+                    moveY += (deltaY / distance);
+                }
+            }
+            
+            // Touch controls
             if (gameState.touch.active) {
                 const targetX = gameState.touch.x - activePlayer.width / 2;
                 const targetY = gameState.touch.y - activePlayer.height / 2;
@@ -830,7 +835,7 @@
                 heart.y += heart.speed;
                 heart.wobble += 0.1;
                 
-                // Check collision with active player
+                // Collision
                 if (heart.x > activePlayer.x - 20 && 
                     heart.x < activePlayer.x + activePlayer.width + 20 &&
                     heart.y > activePlayer.y - 20 && 
@@ -883,14 +888,14 @@
             ctx.fillStyle = '#ffb6c1';
             ctx.fill();
             
-            // Emoji face with proper font for iOS
+            // Face
             ctx.font = '22px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = '#000';
             ctx.fillText(emoji, x + width/2, y + 15);
             
-            // Emotion animation for receiving player
+            // Emotion
             if (emotion === 'love') {
                 ctx.font = '16px "Apple Color Emoji", "Segoe UI Emoji", Arial';
                 ctx.fillText('💕', x + width/2 - 20, y + 8);
@@ -909,34 +914,29 @@
         }
         
         function draw() {
-            // Background
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
             gradient.addColorStop(0, '#ffeef8');
             gradient.addColorStop(1, '#ffe0f0');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Draw floating items (hearts or money)
+            // Draw floating items
             gameState.floatingHearts.forEach(heart => {
                 ctx.save();
                 ctx.translate(heart.x, heart.y);
                 ctx.rotate(Math.sin(heart.wobble) * 0.3);
                 
                 if (currentPlayer === 'mersy') {
-                    // Draw the specific money symbol assigned to this item
-                    // Use larger font and ensure proper rendering on iOS
                     ctx.font = '28px "Apple Color Emoji", "Segoe UI Emoji", Arial';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillStyle = '#000';
                     const symbol = heart.symbol || '💵';
                     ctx.fillText(symbol, 0, 0);
-                    // Add shadow for better visibility
                     ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
                     ctx.shadowBlur = 5;
                     ctx.fillText(symbol, 0, 0);
                 } else {
-                    // Draw hearts for Emir
                     ctx.font = '25px "Apple Color Emoji", "Segoe UI Emoji", Arial';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
@@ -949,7 +949,7 @@
                 ctx.restore();
             });
             
-            // Draw particles
+            // Particles
             gameState.particles.forEach(p => {
                 ctx.fillStyle = `rgba(255, 105, 180, ${p.life / 30})`;
                 ctx.beginPath();
@@ -957,34 +957,29 @@
                 ctx.fill();
             });
             
-            // Draw players
+            // Players
             const activePlayer = currentPlayer === 'emir' ? gameState.emir : gameState.mersy;
             const otherPlayer = currentPlayer === 'emir' ? gameState.mersy : gameState.emir;
             const activeName = currentPlayer === 'emir' ? 'Emir' : 'Mersy';
             const otherName = currentPlayer === 'emir' ? 'Mersy' : 'Emir';
             
-            // Draw active player (the one you control)
             let activeEmoji = currentPlayer === 'emir' ? '🙂' : '👸';
             drawCharacter(activePlayer.x, activePlayer.y, activePlayer.width, activePlayer.height, activeEmoji);
             
-            // Name tag
             ctx.fillStyle = '#333';
             ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(activeName, activePlayer.x + activePlayer.width/2, activePlayer.y - 5);
             
-            // Draw other player (the one receiving gifts)
             let otherEmoji = '😊';
             let otherEmotion = '';
             
             if (currentPlayer === 'emir') {
-                // Mersy is receiving
                 if (gameState.mersy.emotion === 'love') otherEmoji = '😍';
                 else if (gameState.mersy.emotion === 'excited') otherEmoji = '🤩';
                 else if (gameState.mersy.emotion === 'kiss') otherEmoji = '😘';
                 otherEmotion = gameState.mersy.emotion;
             } else {
-                // Emir is receiving
                 if (gameState.emir.emotion === 'love') otherEmoji = '🤴';
                 else if (gameState.emir.emotion === 'excited') otherEmoji = '😍';
                 else if (gameState.emir.emotion === 'kiss') otherEmoji = '😘';
@@ -993,8 +988,6 @@
             }
             
             drawCharacter(otherPlayer.x, otherPlayer.y, otherPlayer.width, otherPlayer.height, otherEmoji, otherEmotion);
-            
-            // Name tag
             ctx.fillText(otherName, otherPlayer.x + otherPlayer.width/2, otherPlayer.y - 5);
         }
         
@@ -1007,7 +1000,6 @@
             }
             document.getElementById('loveLevel').textContent = `💕 Ljubav: ${gameState.loveLevel}%`;
             
-            // Update button states
             document.querySelectorAll('.gift-btn').forEach(btn => {
                 const giftKey = Object.keys(currentGifts).find(key => {
                     const gift = currentGifts[key];
@@ -1040,14 +1032,11 @@
                 gameState.hearts -= gift.cost;
                 gameState.loveLevel = Math.min(100, gameState.loveLevel + gift.love);
                 
-                // Play appropriate sound
                 playSound(gift.sound);
                 
-                // Random message
                 const message = gift.messages[Math.floor(Math.random() * gift.messages.length)];
                 showMessage(message);
                 
-                // Set emotion for the receiving player
                 const receivingPlayer = currentPlayer === 'emir' ? gameState.mersy : gameState.emir;
                 
                 if (gift.love >= 80) {
@@ -1062,7 +1051,6 @@
                     receivingPlayer.emotion = 'neutral';
                 }, 3000);
                 
-                // Create celebration particles
                 const particleCount = gift.love >= 80 ? 50 : gift.love >= 40 ? 35 : 25;
                 for (let i = 0; i < particleCount; i++) {
                     gameState.particles.push({

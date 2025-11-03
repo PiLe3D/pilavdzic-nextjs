@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mersy Love 💕</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow: hidden;
+            touch-action: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #gameContainer {
+            background: white;
+            border-radius: 0;
+            box-shadow: none;
+            width: 100vw;
+            width: 100dvw;
+            height: 100vh;
+            height: 100dvh;
+            max-width: 100vw;
+            max-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        @media (min-width: 501px) {
+            body {
+                position: static;
+            }
+            
+            #gameContainer {
+                width: 450px;
+                height: 800px;
+                border-radius: 30px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            }
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            z-index: 10;
+            gap: 10px;
+        }
+        
+        .stat-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: all;
+        }
+        
+        .stat {
+            background: rgba(255,255,255,0.95);
+            padding: 8px 15px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        @media (min-width: 400px) {
+            .stat {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+        }
+        
+        #changePlayerBtn {
+            background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(156, 39, 176, 0.4);
+            touch-action: manipulation;
+            user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        #changePlayerBtn:active {
+            transform: scale(0.95);
+        }
+        
+        @media (min-width: 400px) {
+            #changePlayerBtn {
+                padding: 10px 18px;
+                font-size: 13px;
+            }
+        }
+        
+        #hearts {
+            color: #e74c3c;
+        }
+        
+        #loveLevel {
+            color: #e91e63;
+        }
+        
+        #shop {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.95);
+            padding: 10px;
+            border-radius: 15px 15px 0 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            pointer-events: all;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+            z-index: 10;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        #shop.open {
+            transform: translateY(0);
+        }
+        
+        @media (min-width: 400px) {
+            #shop {
+                padding: 15px;
+                gap: 10px;
+            }
+        }
+        
+        #shopToggle {
+            position: absolute;
+            bottom: 10px;
+            bottom: max(10px, env(safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(233, 30, 99, 0.5);
+            z-index: 11;
+            touch-action: manipulation;
+            user-select: none;
+            transition: all 0.3s;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        #shopToggle:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+        
+        @media (min-width: 400px) {
+            #shopToggle {
+                padding: 18px 35px;
+                font-size: 18px;
+            }
+        }
+        
+        .gift-btn {
+            padding: 12px 8px;
+            border: 3px solid #e91e63;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #ffeef8 0%, #ffe0f0 100%);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+            font-weight: bold;
+            color: #c2185b;
+            touch-action: manipulation;
+            user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        @media (min-width: 400px) {
+            .gift-btn {
+                font-size: 13px;
+                padding: 14px 10px;
+            }
+        }
+        
+        .gift-btn:active:not(.disabled) {
+            transform: scale(0.95);
+            background: linear-gradient(135deg, #ffe0f0 0%, #ffd1dc 100%);
+        }
+        
+        .gift-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.98);
+            padding: 20px 30px;
+            border-radius: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #e91e63;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: none;
+            pointer-events: none;
+            z-index: 100;
+            max-width: 80%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        @media (min-width: 400px) {
+            #message {
+                font-size: 24px;
+                padding: 30px 40px;
+            }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        #confirmDialog {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        
+        #confirmDialog.show {
+            display: flex;
+        }
+        
+        .confirm-box {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 320px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        .confirm-box h2 {
+            font-size: 22px;
+            color: #e91e63;
+            margin-bottom: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        .confirm-box p {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 25px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        .confirm-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .confirm-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            transition: all 0.3s;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        .confirm-btn.yes {
+            background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.4);
+        }
+        
+        .confirm-btn.no {
+            background: linear-gradient(135deg, #9e9e9e 0%, #757575 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .confirm-btn:active {
+            transform: scale(0.95);
+        }
+        
+        #playerSelection {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ffeef8 0%, #ffe0f0 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            gap: 30px;
+            padding: 20px;
+        }
+        
+        #playerSelection.hidden {
+            display: none;
+        }
+        
+        #playerSelection h1 {
+            font-size: 32px;
+            color: #e91e63;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        @media (min-width: 400px) {
+            #playerSelection h1 {
+                font-size: 36px;
+            }
+        }
+        
+        .player-btn {
+            width: 280px;
+            padding: 30px;
+            border: 5px solid #e91e63;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #ffffff 0%, #ffeef8 100%);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 24px;
+            font-weight: bold;
+            color: #c2185b;
+            box-shadow: 0 10px 30px rgba(233, 30, 99, 0.3);
+            touch-action: manipulation;
+            user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        .player-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 5px 15px rgba(233, 30, 99, 0.4);
+        }
+        
+        .player-emoji {
+            font-size: 60px;
+            display: block;
+            margin-bottom: 15px;
+        }
+        
+        @media (min-width: 400px) {
+            .player-btn {
+                width: 320px;
+                padding: 35px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="playerSelection">
+            <h1>💕 IZABERI IGRAČA 💕</h1>
+            <button class="player-btn" onclick="selectPlayer('mersy')">
+                <span class="player-emoji">👸</span>
+                MERSY
+            </button>
+            <button class="player-btn" onclick="selectPlayer('emir')">
+                <span class="player-emoji">🤴</span>
+                EMIR
+            </button>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui">
+            <div class="stat-group">
+                <div class="stat" id="hearts">❤️ Srca: 0</div>
+                <button id="changePlayerBtn" onclick="changePlayer()">🔄 Promjeni Igrača</button>
+            </div>
+            <div class="stat" id="loveLevel">💕 Ljubav: 0%</div>
+        </div>
+        <button id="shopToggle" onclick="toggleShop()">🎁 KUPI POKLON</button>
+        <div id="shop">
+            <button class="gift-btn" onclick="buyGift('rose')">🌹<br>Ruža<br><small>(5❤️)</small></button>
+            <button class="gift-btn" onclick="buyGift('chocolate')">🍫<br>Čokolada<br><small>(10❤️)</small></button>
+            <button class="gift-btn" onclick="buyGift('ring')">💍<br>Prsten<br><small>(20❤️)</small></button>
+            <button class="gift-btn" onclick="buyGift('heart')">💖<br>Srce<br><small>(30❤️)</small></button>
+            <button class="gift-btn" onclick="buyGift('crown')">👑<br>Kruna<br><small>(50❤️)</small></button>
+            <button class="gift-btn" onclick="buyGift('diamond')">💎<br>Dijamant<br><small>(100❤️)</small></button>
+        </div>
+        <div id="message"></div>
+        <div id="confirmDialog">
+            <div class="confirm-box">
+                <h2>⚠️ Jeste li sigurni?</h2>
+                <p>Izgubićete trenutni napredak i moraćete početi iznova.</p>
+                <div class="confirm-buttons">
+                    <button class="confirm-btn no" onclick="cancelChangePlayer()">Ne</button>
+                    <button class="confirm-btn yes" onclick="confirmChangePlayer()">Da</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size based on container
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Audio Context for sounds
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            switch(type) {
+                case 'collect': // Sweet pickup sound
+                    oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.1);
+                    break;
+                    
+                case 'gift': // Happy gift sound
+                    oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.15);
+                    oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
+                    gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.3);
+                    break;
+                    
+                case 'love': // Romantic sound
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(523, audioCtx.currentTime); // C5
+                    oscillator.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1); // E5
+                    oscillator.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2); // G5
+                    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.4);
+                    break;
+                    
+                case 'excited': // Exciting sound
+                    oscillator.type = 'square';
+                    for(let i = 0; i < 5; i++) {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.frequency.setValueAtTime(800 + i * 200, audioCtx.currentTime + i * 0.05);
+                        gain.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.05);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.05 + 0.1);
+                        osc.start(audioCtx.currentTime + i * 0.05);
+                        osc.stop(audioCtx.currentTime + i * 0.05 + 0.1);
+                    }
+                    return; // Skip the main oscillator
+            }
+        }
+        
+        // Shop toggle functionality
+        let shopOpen = false;
+        function toggleShop() {
+            shopOpen = !shopOpen;
+            const shop = document.getElementById('shop');
+            const toggle = document.getElementById('shopToggle');
+            
+            if (shopOpen) {
+                shop.classList.add('open');
+                toggle.textContent = '❌ SAKRIJ POKLONE';
+                toggle.style.bottom = '270px';
+            } else {
+                shop.classList.remove('open');
+                toggle.textContent = '🎁 KUPI POKLON';
+                const safeAreaBottom = getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)') || '0px';
+                toggle.style.bottom = `max(10px, ${safeAreaBottom})`;
+            }
+        }
+        
+        // Player selection
+        function selectPlayer(player) {
+            currentPlayer = player;
+            
+            if (player === 'mersy') {
+                currentGifts = giftsForMersy;
+                gameState.mersy.x = 50;
+                gameState.mersy.y = 200;
+                gameState.emir.x = canvas.width - 80;
+                gameState.emir.y = 100;
+            } else {
+                currentGifts = giftsForEmir;
+                gameState.emir.x = 50;
+                gameState.emir.y = 200;
+                gameState.mersy.x = canvas.width - 80;
+                gameState.mersy.y = 100;
+            }
+            
+            // Hide selection screen
+            document.getElementById('playerSelection').classList.add('hidden');
+            
+            // Update shop display
+            updateShopDisplay();
+            
+            // Update UI labels
+            updateUILabels();
+            
+            // Start spawning
+            startGame();
+        }
+        
+        function updateUILabels() {
+            const heartsLabel = document.getElementById('hearts');
+            if (currentPlayer === 'mersy') {
+                heartsLabel.innerHTML = '💰 Novac: 0';
+            } else {
+                heartsLabel.innerHTML = '❤️ Srca: 0';
+            }
+        }
+        
+        function updateShopDisplay() {
+            const shop = document.getElementById('shop');
+            shop.innerHTML = '';
+            
+            Object.entries(currentGifts).forEach(([key, gift]) => {
+                const btn = document.createElement('button');
+                btn.className = 'gift-btn';
+                btn.onclick = () => buyGift(key);
+                btn.innerHTML = `${gift.emoji}<br>${gift.name}<br><small>(${gift.cost}${currentPlayer === 'mersy' ? '💰' : '❤️'})</small>`;
+                shop.appendChild(btn);
+            });
+        }
+        
+        let gameStarted = false;
+        let spawnInterval = null;
+        
+        function startGame() {
+            if (gameStarted) return;
+            gameStarted = true;
+            
+            // Spawn floating items
+            spawnInterval = setInterval(() => {
+                if (Math.random() > 0.2) {
+                    const newItem = {
+                        x: Math.random() * (canvas.width - 60) + 30,
+                        y: -30,
+                        speed: 1.5 + Math.random() * 2.5,
+                        wobble: Math.random() * Math.PI * 2
+                    };
+                    
+                    // If Mersy is playing, assign a random money symbol to each item
+                    if (currentPlayer === 'mersy') {
+                        const moneySymbols = ['💵', '💶', '💰', '🪙'];
+                        newItem.symbol = moneySymbols[Math.floor(Math.random() * moneySymbols.length)];
+                    }
+                    
+                    gameState.floatingHearts.push(newItem);
+                }
+            }, 1200);
+            
+            gameLoop();
+        }
+        
+        // Change player function - show confirmation
+        function changePlayer() {
+            document.getElementById('confirmDialog').classList.add('show');
+        }
+        
+        // Cancel change player
+        function cancelChangePlayer() {
+            document.getElementById('confirmDialog').classList.remove('show');
+        }
+        
+        // Confirm change player
+        function confirmChangePlayer() {
+            // Hide confirmation dialog
+            document.getElementById('confirmDialog').classList.remove('show');
+            
+            // Stop the game
+            gameStarted = false;
+            if (spawnInterval) {
+                clearInterval(spawnInterval);
+                spawnInterval = null;
+            }
+            
+            // Reset game state
+            gameState.hearts = 0;
+            gameState.loveLevel = 0;
+            gameState.floatingHearts = [];
+            gameState.particles = [];
+            gameState.emir.emotion = 'neutral';
+            gameState.mersy.emotion = 'neutral';
+            currentPlayer = null;
+            
+            // Close shop if open
+            const shop = document.getElementById('shop');
+            const toggle = document.getElementById('shopToggle');
+            shop.classList.remove('open');
+            toggle.textContent = '🎁 KUPI POKLON';
+            const safeAreaBottom = getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)') || '0px';
+            toggle.style.bottom = `max(10px, ${safeAreaBottom})`;
+            
+            // Show player selection
+            document.getElementById('playerSelection').classList.remove('hidden');
+        }
+        
+        // Initialize audio on first user interaction
+        let audioInitialized = false;
+        document.addEventListener('touchstart', () => {
+            if (!audioInitialized) {
+                audioCtx.resume();
+                audioInitialized = true;
+            }
+        }, { once: true });
+        
+        document.addEventListener('click', () => {
+            if (!audioInitialized) {
+                audioCtx.resume();
+                audioInitialized = true;
+            }
+        }, { once: true });
+        // Current player
+        let currentPlayer = null; // 'emir' or 'mersy'
+        
+        let gameState = {
+            hearts: 0,
+            loveLevel: 0,
+            emir: { x: 50, y: 200, width: 40, height: 70, speed: 6, emotion: 'neutral' },
+            mersy: { x: 0, y: 100, width: 40, height: 70, speed: 6, emotion: 'neutral', animationTimer: 0 },
+            floatingHearts: [],
+            keys: {},
+            particles: [],
+            touch: {
+                active: false,
+                x: 0,
+                y: 0
+            }
+        };
+        
+        // Position Mersy based on canvas size
+        function updateMersyPosition() {
+            if (currentPlayer === 'emir') {
+                gameState.mersy.x = canvas.width - 80;
+            } else if (currentPlayer === 'mersy') {
+                gameState.emir.x = canvas.width - 80;
+            }
+        }
+        updateMersyPosition();
+        window.addEventListener('resize', updateMersyPosition);
+        
+        const giftsForEmir = {
+            rose: { cost: 5, love: 10, emoji: '🌹', name: 'Ruža', messages: ['Ahhhh ruža! 🌹', 'Divna je! ❤️', 'Volim te! 💕'], sound: 'gift' },
+            chocolate: { cost: 10, love: 20, emoji: '🍫', name: 'Čokolada', messages: ['Mmm čokolada! 🍫', 'Najbolja si! 😍', 'Tako si sladak! 💝'], sound: 'gift' },
+            ring: { cost: 20, love: 35, emoji: '💍', name: 'Prsten', messages: ['PRSTEN! 💍', 'OMG OMG OMG! 😱', 'Udajem se ponovo! 💒'], sound: 'love' },
+            heart: { cost: 30, love: 50, emoji: '💖', name: 'Srce', messages: ['OGROMNO SRCE! 💖', 'Eksplodiram od ljubavi! 💥', 'Ti si moj svet! 🌍'], sound: 'love' },
+            crown: { cost: 50, love: 80, emoji: '👑', name: 'Kruna', messages: ['KRUNA! 👑', 'JA SAM KRALJICA! 👸', 'NAJBOLJI SI NA SVETU! 🌟'], sound: 'excited' },
+            diamond: { cost: 100, love: 100, emoji: '💎', name: 'Dijamant', messages: ['DIJAMAAANT! 💎✨', 'NE MOGU DA VJERUJEM! 😭', 'TI SI SAVRŠEN EMIREE! 💫', 'VJEČNA LJUBAV! 💕💕💕'], sound: 'excited' }
+        };
+        
+        const giftsForMersy = {
+            chicken: { cost: 5, love: 10, emoji: '🍗', name: 'Pileci Fileti', messages: ['Mmm pileci! 🍗', 'Najbolji su! 😋', 'Volim te Mersy! 💕'], sound: 'gift' },
+            pizza: { cost: 10, love: 20, emoji: '🍕', name: 'Pizza Mersy', messages: ['PIZZA! 🍕', 'Moja omiljena! 😍', 'Tako si slatka! 💝'], sound: 'gift' },
+            massimo: { cost: 20, love: 35, emoji: '👗', name: 'Massimo Dutti', messages: ['MASSIMO! 👗', 'OMG NOVA HALJINA! 😱', 'Obozavam te! 💕'], sound: 'love' },
+            massage: { cost: 30, love: 50, emoji: '💆', name: 'Masaza', messages: ['MASAZA! 💆', 'Tako mi treba! 😌', 'Najbolji si! 🌟'], sound: 'love' },
+            scratch: { cost: 50, love: 80, emoji: '✋', name: 'Ceskanje', messages: ['CESKANJE! ✋', 'AHHH DA! 😊', 'NIKAD NE PRESTAJ! 💕'], sound: 'excited' },
+            dubai: { cost: 100, love: 100, emoji: '✈️', name: 'Dubai', messages: ['DUBAI! ✈️🏝️', 'NE MOGU DA VJERUJEM! 😭', 'IDEMO U DUBAI EMIREE! 🌟', 'TI SI NAJBOLJI IKAD! 💕💕💕'], sound: 'excited' }
+        };
+        
+        let currentGifts = giftsForEmir;
+        
+        // Spawn floating hearts
+        setInterval(() => {
+            if (Math.random() > 0.2) {
+                gameState.floatingHearts.push({
+                    x: Math.random() * (canvas.width - 60) + 30,
+                    y: -30,
+                    speed: 1.5 + Math.random() * 2.5,
+                    wobble: Math.random() * Math.PI * 2
+                });
+            }
+        }, 1200);
+        
+        // Direct touch controls - drag active player with your finger
+        canvas.addEventListener('touchstart', (e) => {
+            const activePlayer = currentPlayer === 'emir' ? gameState.emir : gameState.mersy;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+            
+            // Check if touching near active player
+            if (touchX >= activePlayer.x - 30 && 
+                touchX <= activePlayer.x + activePlayer.width + 30 &&
+                touchY >= activePlayer.y - 30 && 
+                touchY <= activePlayer.y + activePlayer.height + 30) {
+                gameState.touch.active = true;
+                gameState.touch.x = touchX;
+                gameState.touch.y = touchY;
+            }
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!gameState.touch.active) return;
+            
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            gameState.touch.x = touch.clientX - rect.left;
+            gameState.touch.y = touch.clientY - rect.top;
+        });
+        
+        const endTouch = () => {
+            gameState.touch.active = false;
+        };
+        
+        canvas.addEventListener('touchend', endTouch);
+        canvas.addEventListener('touchcancel', endTouch);
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            gameState.keys[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            gameState.keys[e.key] = false;
+        });
+        
+        function updateEmir() {
+            const activePlayer = currentPlayer === 'emir' ? gameState.emir : gameState.mersy;
+            
+            let moveX = 0;
+            let moveY = 0;
+            
+            // Keyboard controls
+            if (gameState.keys['ArrowLeft'] || gameState.keys['a']) moveX -= 1;
+            if (gameState.keys['ArrowRight'] || gameState.keys['d']) moveX += 1;
+            if (gameState.keys['ArrowUp'] || gameState.keys['w']) moveY -= 1;
+            if (gameState.keys['ArrowDown'] || gameState.keys['s']) moveY += 1;
+            
+            // Touch controls - move active player toward touch position
+            if (gameState.touch.active) {
+                const targetX = gameState.touch.x - activePlayer.width / 2;
+                const targetY = gameState.touch.y - activePlayer.height / 2;
+                
+                const deltaX = targetX - activePlayer.x;
+                const deltaY = targetY - activePlayer.y;
+                
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                if (distance > 5) {
+                    moveX += (deltaX / distance);
+                    moveY += (deltaY / distance);
+                }
+            }
+            
+            // Apply movement
+            activePlayer.x += moveX * activePlayer.speed;
+            activePlayer.y += moveY * activePlayer.speed;
+            
+            // Boundaries
+            const shopHeight = 180;
+            activePlayer.x = Math.max(0, Math.min(canvas.width - activePlayer.width, activePlayer.x));
+            activePlayer.y = Math.max(60, Math.min(canvas.height - shopHeight - activePlayer.height, activePlayer.y));
+        }
+        
+        function updateHearts() {
+            const activePlayer = currentPlayer === 'emir' ? gameState.emir : gameState.mersy;
+            
+            for (let i = gameState.floatingHearts.length - 1; i >= 0; i--) {
+                const heart = gameState.floatingHearts[i];
+                heart.y += heart.speed;
+                heart.wobble += 0.1;
+                
+                // Check collision with active player
+                if (heart.x > activePlayer.x - 20 && 
+                    heart.x < activePlayer.x + activePlayer.width + 20 &&
+                    heart.y > activePlayer.y - 20 && 
+                    heart.y < activePlayer.y + activePlayer.height + 20) {
+                    gameState.hearts++;
+                    playSound('collect');
+                    createParticles(heart.x, heart.y);
+                    gameState.floatingHearts.splice(i, 1);
+                    updateUI();
+                } else if (heart.y > canvas.height) {
+                    gameState.floatingHearts.splice(i, 1);
+                }
+            }
+        }
+        
+        function createParticles(x, y) {
+            for (let i = 0; i < 8; i++) {
+                gameState.particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    life: 30
+                });
+            }
+        }
+        
+        function updateParticles() {
+            for (let i = gameState.particles.length - 1; i >= 0; i--) {
+                const p = gameState.particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                if (p.life <= 0) {
+                    gameState.particles.splice(i, 1);
+                }
+            }
+        }
+        
+        function drawCharacter(x, y, width, height, emoji, emotion = '') {
+            ctx.save();
+            
+            // Body
+            ctx.fillStyle = '#ffd1dc';
+            ctx.fillRect(x, y + 25, width, height - 25);
+            
+            // Head
+            ctx.beginPath();
+            ctx.arc(x + width/2, y + 15, 15, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffb6c1';
+            ctx.fill();
+            
+            // Emoji face with proper font for iOS
+            ctx.font = '22px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#000';
+            ctx.fillText(emoji, x + width/2, y + 15);
+            
+            // Emotion animation for receiving player
+            if (emotion === 'love') {
+                ctx.font = '16px "Apple Color Emoji", "Segoe UI Emoji", Arial';
+                ctx.fillText('💕', x + width/2 - 20, y + 8);
+                ctx.fillText('💕', x + width/2 + 20, y + 8);
+            } else if (emotion === 'excited') {
+                ctx.font = '14px "Apple Color Emoji", "Segoe UI Emoji", Arial';
+                ctx.fillText('✨', x + width/2 - 18, y + 3);
+                ctx.fillText('✨', x + width/2 + 18, y + 3);
+                ctx.fillText('⭐', x + width/2, y - 10);
+            } else if (emotion === 'kiss') {
+                ctx.font = '20px "Apple Color Emoji", "Segoe UI Emoji", Arial';
+                ctx.fillText('😘', x + width/2, y + 20);
+            }
+            
+            ctx.restore();
+        }
+        
+        function draw() {
+            // Background
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#ffeef8');
+            gradient.addColorStop(1, '#ffe0f0');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw floating items (hearts or money)
+            gameState.floatingHearts.forEach(heart => {
+                ctx.save();
+                ctx.translate(heart.x, heart.y);
+                ctx.rotate(Math.sin(heart.wobble) * 0.3);
+                
+                if (currentPlayer === 'mersy') {
+                    // Draw the specific money symbol assigned to this item
+                    // Use larger font and ensure proper rendering on iOS
+                    ctx.font = '28px "Apple Color Emoji", "Segoe UI Emoji", Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#000';
+                    const symbol = heart.symbol || '💵';
+                    ctx.fillText(symbol, 0, 0);
+                    // Add shadow for better visibility
+                    ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
+                    ctx.shadowBlur = 5;
+                    ctx.fillText(symbol, 0, 0);
+                } else {
+                    // Draw hearts for Emir
+                    ctx.font = '25px "Apple Color Emoji", "Segoe UI Emoji", Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillText('❤️', 0, 0);
+                    ctx.shadowColor = '#ff0000';
+                    ctx.shadowBlur = 3;
+                    ctx.fillText('❤️', 0, 0);
+                }
+                ctx.restore();
+            });
+            
+            // Draw particles
+            gameState.particles.forEach(p => {
+                ctx.fillStyle = `rgba(255, 105, 180, ${p.life / 30})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw players
+            const activePlayer = currentPlayer === 'emir' ? gameState.emir : gameState.mersy;
+            const otherPlayer = currentPlayer === 'emir' ? gameState.mersy : gameState.emir;
+            const activeName = currentPlayer === 'emir' ? 'Emir' : 'Mersy';
+            const otherName = currentPlayer === 'emir' ? 'Mersy' : 'Emir';
+            
+            // Draw active player (the one you control)
+            let activeEmoji = currentPlayer === 'emir' ? '🙂' : '👸';
+            drawCharacter(activePlayer.x, activePlayer.y, activePlayer.width, activePlayer.height, activeEmoji);
+            
+            // Name tag
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(activeName, activePlayer.x + activePlayer.width/2, activePlayer.y - 5);
+            
+            // Draw other player (the one receiving gifts)
+            let otherEmoji = '😊';
+            let otherEmotion = '';
+            
+            if (currentPlayer === 'emir') {
+                // Mersy is receiving
+                if (gameState.mersy.emotion === 'love') otherEmoji = '😍';
+                else if (gameState.mersy.emotion === 'excited') otherEmoji = '🤩';
+                else if (gameState.mersy.emotion === 'kiss') otherEmoji = '😘';
+                otherEmotion = gameState.mersy.emotion;
+            } else {
+                // Emir is receiving
+                if (gameState.emir.emotion === 'love') otherEmoji = '🤴';
+                else if (gameState.emir.emotion === 'excited') otherEmoji = '😍';
+                else if (gameState.emir.emotion === 'kiss') otherEmoji = '😘';
+                else otherEmoji = '🙂';
+                otherEmotion = gameState.emir.emotion;
+            }
+            
+            drawCharacter(otherPlayer.x, otherPlayer.y, otherPlayer.width, otherPlayer.height, otherEmoji, otherEmotion);
+            
+            // Name tag
+            ctx.fillText(otherName, otherPlayer.x + otherPlayer.width/2, otherPlayer.y - 5);
+        }
+        
+        function updateUI() {
+            const heartsLabel = document.getElementById('hearts');
+            if (currentPlayer === 'mersy') {
+                heartsLabel.textContent = `💰 Novac: ${gameState.hearts}`;
+            } else {
+                heartsLabel.textContent = `❤️ Srca: ${gameState.hearts}`;
+            }
+            document.getElementById('loveLevel').textContent = `💕 Ljubav: ${gameState.loveLevel}%`;
+            
+            // Update button states
+            document.querySelectorAll('.gift-btn').forEach(btn => {
+                const giftKey = Object.keys(currentGifts).find(key => {
+                    const gift = currentGifts[key];
+                    return btn.innerHTML.includes(gift.emoji);
+                });
+                
+                if (giftKey) {
+                    const gift = currentGifts[giftKey];
+                    if (gameState.hearts < gift.cost) {
+                        btn.classList.add('disabled');
+                    } else {
+                        btn.classList.remove('disabled');
+                    }
+                }
+            });
+        }
+        
+        function showMessage(text) {
+            const msgEl = document.getElementById('message');
+            msgEl.textContent = text;
+            msgEl.style.display = 'block';
+            setTimeout(() => {
+                msgEl.style.display = 'none';
+            }, 2000);
+        }
+        
+        function buyGift(giftType) {
+            const gift = currentGifts[giftType];
+            if (gameState.hearts >= gift.cost) {
+                gameState.hearts -= gift.cost;
+                gameState.loveLevel = Math.min(100, gameState.loveLevel + gift.love);
+                
+                // Play appropriate sound
+                playSound(gift.sound);
+                
+                // Random message
+                const message = gift.messages[Math.floor(Math.random() * gift.messages.length)];
+                showMessage(message);
+                
+                // Set emotion for the receiving player
+                const receivingPlayer = currentPlayer === 'emir' ? gameState.mersy : gameState.emir;
+                
+                if (gift.love >= 80) {
+                    receivingPlayer.emotion = 'excited';
+                } else if (gift.love >= 40) {
+                    receivingPlayer.emotion = 'kiss';
+                } else {
+                    receivingPlayer.emotion = 'love';
+                }
+                
+                setTimeout(() => {
+                    receivingPlayer.emotion = 'neutral';
+                }, 3000);
+                
+                // Create celebration particles
+                const particleCount = gift.love >= 80 ? 50 : gift.love >= 40 ? 35 : 25;
+                for (let i = 0; i < particleCount; i++) {
+                    gameState.particles.push({
+                        x: receivingPlayer.x + receivingPlayer.width/2,
+                        y: receivingPlayer.y + receivingPlayer.height/2,
+                        vx: (Math.random() - 0.5) * 10,
+                        vy: (Math.random() - 0.5) * 10,
+                        life: 60
+                    });
+                }
+                
+                updateUI();
+            }
+        }
+        
+        function gameLoop() {
+            if (!gameStarted) return;
+            
+            updateEmir();
+            updateHearts();
+            updateParticles();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>

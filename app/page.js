@@ -44,7 +44,7 @@ const games = [
 
         {/* Footer */}
         <footer className="text-center text-white opacity-80 mt-16">
-          <p>© 2024 Pilavdžić.org - Sva prava zadržana</p>
+          <p>© 2025 Pilavdžić.org - Sva prava zadržana</p>
         </footer>
       </div>
     </div>

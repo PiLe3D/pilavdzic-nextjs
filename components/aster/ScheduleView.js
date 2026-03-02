@@ -8,6 +8,18 @@ export default function ScheduleView() {
   const { weeklySchedule, trainingGroups, dayNames, dayNamesFull, members } = useAster();
   const [selectedMember, setSelectedMember] = useState('all');
   const [weekOffset, setWeekOffset] = useState(0);
+  // Hidden groups/types — toggle visibility
+  const [hiddenGroups, setHiddenGroups] = useState(new Set());
+  const [hideIndividual, setHideIndividual] = useState(false);
+
+  const toggleGroup = (groupId) => {
+    setHiddenGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      return next;
+    });
+  };
 
   // Calculate current week dates
   const getWeekDates = (offset) => {
@@ -46,13 +58,19 @@ export default function ScheduleView() {
   // Find member by name for linking
   const findMember = (name) => members.find(m => m.name === name || m.fullName === name);
 
-  // Filter schedule
-  const filteredSchedule = selectedMember === 'all'
-    ? weeklySchedule
-    : weeklySchedule.filter(s => {
-        if (s.type === 'individual') return s.student === selectedMember;
-        return s.type === 'group';
-      });
+  // Filter schedule — by member + by hidden groups
+  const filteredSchedule = weeklySchedule.filter(s => {
+    // Member filter
+    if (selectedMember !== 'all') {
+      if (s.type === 'individual' && s.student !== selectedMember) return false;
+      // Keep group classes when filtering by member
+      if (s.type === 'group' && selectedMember !== 'all') { /* keep */ }
+    }
+    // Group visibility toggle
+    if (s.type === 'group' && hiddenGroups.has(s.group)) return false;
+    if (s.type === 'individual' && hideIndividual) return false;
+    return true;
+  });
 
   const getGroupInfo = (groupId) => trainingGroups.find(g => g.id === groupId);
 
@@ -115,18 +133,32 @@ export default function ScheduleView() {
         </select>
       </div>
 
-      {/* Legend */}
+      {/* Legend — clickable toggles */}
       <div className="mb-5 flex flex-wrap gap-2">
-        {trainingGroups.map(g => (
-          <span key={g.id} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium" style={{ background: `${g.color}20`, color: g.color }}>
-            <span className="w-2 h-2 rounded-full" style={{ background: g.color }}></span>
-            {g.name}
-          </span>
-        ))}
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400">
-          <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+        {trainingGroups.map(g => {
+          const isHidden = hiddenGroups.has(g.id);
+          return (
+            <button key={g.id} onClick={() => toggleGroup(g.id)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer select-none
+                ${isHidden ? 'opacity-30 line-through' : 'opacity-100'}`}
+              style={{ background: isHidden ? '#374151' : `${g.color}20`, color: isHidden ? '#6b7280' : g.color }}>
+              <span className="w-2 h-2 rounded-full transition-all" style={{ background: isHidden ? '#6b7280' : g.color }}></span>
+              {g.name}
+            </button>
+          );
+        })}
+        <button onClick={() => setHideIndividual(h => !h)}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer select-none
+            ${hideIndividual ? 'opacity-30 line-through bg-gray-700 text-gray-500' : 'bg-orange-500/10 text-orange-400'}`}>
+          <span className={`w-2 h-2 rounded-full transition-all ${hideIndividual ? 'bg-gray-500' : 'bg-orange-500'}`}></span>
           Individualni
-        </span>
+        </button>
+        {(hiddenGroups.size > 0 || hideIndividual) && (
+          <button onClick={() => { setHiddenGroups(new Set()); setHideIndividual(false); }}
+            className="text-xs text-gray-500 hover:text-orange-400 px-2 py-1 transition-colors">
+            ↻ Prikaži sve
+          </button>
+        )}
       </div>
 
       {/* Desktop Grid */}

@@ -19,6 +19,12 @@ const games = [
     description: 'Jedinstvena igra koja će vas zabaviti satima!',
     url: '/cigara',  // ✅ Lokalni route
     image: '/images/cigara.jpg'
+  },
+  {
+    title: 'Aster',
+    description: 'Raspored i takmičenja plesnog kluba Aster',
+    url: '/aster',
+    image: '/images/aster-card.svg'
   }
 ];
 

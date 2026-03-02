@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { competitions } from '@/app/aster/data';
+import { useAster } from '@/app/aster/store';
 
 export default function CompetitionCalendar() {
+  const { competitions } = useAster();
   const [filterOrg, setFilterOrg] = useState('all');
   const [showPast, setShowPast] = useState(false);
 

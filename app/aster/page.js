@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { AsterProvider, useAster } from '@/app/aster/store';
 import ScheduleView from '@/components/aster/ScheduleView';
 import MemberList from '@/components/aster/MemberList';
 import CompetitionCalendar from '@/components/aster/CompetitionCalendar';
-import { members, competitions } from '@/app/aster/data';
 
 const tabs = [
   { id: 'schedule', label: 'Raspored', icon: '📅' },
@@ -12,30 +12,24 @@ const tabs = [
   { id: 'competitions', label: 'Takmičenja', icon: '🏆' },
 ];
 
-export default function AsterPage() {
+function AsterContent() {
+  const { members, competitions, announcements } = useAster();
   const [activeTab, setActiveTab] = useState('schedule');
 
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0];
   const nextComp = competitions.find(c => c.date >= today);
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
-      {/* Background gradient */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative max-w-6xl mx-auto px-4 py-6 sm:py-10">
-        {/* Back button */}
         <div className="mb-6">
-          <a
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-orange-400 transition-colors"
-          >
-            <span>←</span>
-            <span>pilavdzic.org</span>
+          <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-orange-400 transition-colors">
+            <span>←</span><span>pilavdzic.org</span>
           </a>
         </div>
 
@@ -55,8 +49,6 @@ export default function AsterPage() {
                 </div>
               </div>
             </div>
-
-            {/* Quick stats */}
             <div className="flex gap-4 sm:ml-auto text-center">
               <div className="bg-gray-800/30 rounded-xl px-4 py-2.5 border border-gray-800">
                 <div className="text-lg font-bold text-orange-400">{members.length}</div>
@@ -75,19 +67,29 @@ export default function AsterPage() {
             </div>
           </div>
 
+          {/* Announcements */}
+          {announcements.length > 0 && (
+            <div className="mb-6 space-y-2">
+              {announcements.slice(0, 3).map(ann => (
+                <div key={ann.id} className="bg-orange-500/5 border border-orange-500/20 rounded-xl px-4 py-3 flex items-start gap-3">
+                  <span className="text-orange-400 shrink-0 mt-0.5">📢</span>
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-200">{ann.text}</div>
+                    <div className="text-xs text-gray-500 mt-1">{new Date(ann.date).toLocaleDateString('bs')}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Tabs */}
           <div className="flex gap-1 bg-gray-900/50 p-1 rounded-xl border border-gray-800 overflow-x-auto">
             {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex-1 justify-center
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex-1 justify-center
                   ${activeTab === tab.id
                     ? 'bg-gradient-to-r from-orange-500/20 to-pink-500/20 text-orange-400 border border-orange-500/20'
-                    : 'text-gray-500 hover:text-gray-300 border border-transparent'}
-                `}
-              >
+                    : 'text-gray-500 hover:text-gray-300 border border-transparent'}`}>
                 <span className="text-base">{tab.icon}</span>
                 <span>{tab.label}</span>
               </button>
@@ -95,23 +97,25 @@ export default function AsterPage() {
           </div>
         </header>
 
-        {/* Content */}
         <main className="min-h-[60vh]">
           {activeTab === 'schedule' && <ScheduleView />}
           {activeTab === 'members' && <MemberList />}
           {activeTab === 'competitions' && <CompetitionCalendar />}
         </main>
 
-        {/* Footer */}
         <footer className="mt-12 pt-6 border-t border-gray-800/50 text-center">
-          <p className="text-xs text-gray-600">
-            Aster Plesni Klub &bull; Sarajevo &bull; Podaci ažurirani: Mart 2026
-          </p>
-          <p className="text-xs text-gray-700 mt-1">
-            Trenerice: Andrea Brekalo, Lamija Svraka, Esma Ahmić
-          </p>
+          <p className="text-xs text-gray-600">Aster Plesni Klub &bull; Sarajevo &bull; Podaci ažurirani: Mart 2026</p>
+          <p className="text-xs text-gray-700 mt-1">Trenerice: Andrea Brekalo, Lamija Svraka, Esma Ahmić</p>
         </footer>
       </div>
     </div>
+  );
+}
+
+export default function AsterPage() {
+  return (
+    <AsterProvider>
+      <AsterContent />
+    </AsterProvider>
   );
 }

@@ -82,10 +82,10 @@ export const trainers = [
 
 // ===== GRUPE TRENINGA =====
 export const trainingGroups = [
-  { id: "pocetna", name: "Male početnna", level: "Početni", days: ["Pon", "Sri", "Ned"], time: "18:00-19:00", color: "#22c55e", bgColor: "#22c55e15" },
-  { id: "srednja", name: "Male srednja", level: "Srednji", days: ["Pon", "Uto", "Sri", "Ned"], time: "19:00-20:00", color: "#3b82f6", bgColor: "#3b82f615" },
-  { id: "napredna", name: "Male napredna", level: "Napredni", days: ["Pon", "Uto", "Sri", "Ned"], time: "20:00-21:00", color: "#8b5cf6", bgColor: "#8b5cf615" },
-  { id: "velike", name: "Velike napredna", level: "Napredni+", days: ["Pon", "Uto", "Sri", "Ned"], time: "20:30-22:00", color: "#ec4899", bgColor: "#ec489915" },
+  { id: "pocetna", name: "Male početnna", level: "Početni", days: ["Pon", "Sri"], time: "18:00-19:00", color: "#22c55e", bgColor: "#22c55e15" },
+  { id: "srednja", name: "Male srednja", level: "Srednji", days: ["Pon", "Uto", "Sri"], time: "19:00-20:00", color: "#3b82f6", bgColor: "#3b82f615" },
+  { id: "napredna", name: "Male napredna", level: "Napredni", days: ["Pon", "Uto", "Sri"], time: "20:00-21:00", color: "#8b5cf6", bgColor: "#8b5cf615" },
+  { id: "velike", name: "Velike napredna", level: "Napredni+", days: ["Pon", "Uto", "Sri"], time: "20:30-22:00", color: "#ec4899", bgColor: "#ec489915" },
   { id: "formacija", name: "Formacija", level: "Svi", days: ["Pet", "Sub"], time: "10:00-12:00", color: "#f59e0b", bgColor: "#f59e0b15" },
   { id: "mala", name: "Grupa mala", level: "Mali", days: ["Pet", "Sub"], time: "12:00-13:00", color: "#10b981", bgColor: "#10b98115" },
   { id: "balet", name: "Balet", level: "Svi", days: ["Čet"], time: "19:45-21:00", color: "#06b6d4", bgColor: "#06b6d415" },
@@ -116,21 +116,17 @@ export const weeklySchedule = [
   // PETAK
   { day: "Pet", time: "10:00", duration: 120, group: "formacija", type: "group" },
   { day: "Pet", time: "12:00", duration: 60, group: "mala", type: "group" },
-  { day: "Pet", time: "12:00", duration: 60, type: "individual", student: "Nasiha", dance: "Esma" },
   { day: "Pet", time: "13:00", duration: 60, type: "individual", student: "Iman", dance: "Cha-cha/Jive" },
-  { day: "Pet", time: "13:00", duration: 60, type: "individual", student: "Merjem S.", dance: null },
   { day: "Pet", time: "14:00", duration: 60, type: "individual", student: "Dalia", dance: null },
   { day: "Pet", time: "15:00", duration: 60, type: "individual", student: "Nora", dance: null },
 
   // SUBOTA
   { day: "Sub", time: "10:00", duration: 120, group: "formacija", type: "group" },
   { day: "Sub", time: "12:00", duration: 60, group: "mala", type: "group" },
+  { day: "Sub", time: "12:00", duration: 90, type: "individual", student: "Nasiha", dance: "Esma" },
+  { day: "Sub", time: "13:00", duration: 60, type: "individual", student: "Merjem S.", dance: null },
 
-  // NEDJELJA
-  { day: "Ned", time: "18:00", duration: 60, group: "pocetna", type: "group" },
-  { day: "Ned", time: "19:00", duration: 60, group: "srednja", type: "group" },
-  { day: "Ned", time: "20:00", duration: 60, group: "napredna", type: "group" },
-  { day: "Ned", time: "20:30", duration: 90, group: "velike", type: "group" },
+  // NEDJELJA — nema treninga
 ];
 
 // ===== TAKMIČENJA 2026 =====

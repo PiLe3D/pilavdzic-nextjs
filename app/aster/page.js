@@ -5,6 +5,7 @@ import { AsterProvider, useAster } from '@/app/aster/store';
 import ScheduleView from '@/components/aster/ScheduleView';
 import MemberList from '@/components/aster/MemberList';
 import CompetitionCalendar from '@/components/aster/CompetitionCalendar';
+import { ASTER_VERSION, changelog } from '@/app/aster/changelog';
 
 const tabs = [
   { id: 'schedule', label: 'Raspored', icon: '📅' },
@@ -15,6 +16,7 @@ const tabs = [
 function AsterContent() {
   const { members, competitions, announcements } = useAster();
   const [activeTab, setActiveTab] = useState('schedule');
+  const [showChangelog, setShowChangelog] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
   const nextComp = competitions.find(c => c.date >= today);
@@ -103,9 +105,37 @@ function AsterContent() {
           {activeTab === 'competitions' && <CompetitionCalendar />}
         </main>
 
-        <footer className="mt-12 pt-6 border-t border-gray-800/50 text-center">
-          <p className="text-xs text-gray-600">Aster Plesni Klub &bull; Sarajevo &bull; Podaci ažurirani: Mart 2026</p>
-          <p className="text-xs text-gray-700 mt-1">Trenerice: Andrea Brekalo, Lamija Svraka, Esma Ahmić</p>
+        <footer className="mt-12 pt-6 border-t border-gray-800/50">
+          <div className="text-center">
+            <p className="text-xs text-gray-600">Aster Plesni Klub &bull; Sarajevo &bull; Trenerice: Andrea Brekalo, Lamija Svraka, Esma Ahmić</p>
+            <button
+              onClick={() => setShowChangelog(v => !v)}
+              className="text-xs text-gray-700 hover:text-orange-400 mt-2 transition-colors inline-flex items-center gap-1"
+            >
+              {ASTER_VERSION} {showChangelog ? '▲' : '▼'}
+            </button>
+          </div>
+
+          {showChangelog && (
+            <div className="mt-4 max-w-2xl mx-auto">
+              {changelog.map(release => (
+                <div key={release.version} className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-bold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded">{release.version}</span>
+                    <span className="text-xs text-gray-600">{release.date}</span>
+                  </div>
+                  <ul className="space-y-1 pl-4">
+                    {release.changes.map((change, i) => (
+                      <li key={i} className="text-xs text-gray-500 flex items-start gap-2">
+                        <span className="text-orange-500/40 mt-0.5 shrink-0">•</span>
+                        <span>{change}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
         </footer>
       </div>
     </div>

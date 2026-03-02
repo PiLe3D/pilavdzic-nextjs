@@ -96,13 +96,14 @@ const btnSecondary = "bg-gray-800 text-gray-300 font-medium px-4 py-2 rounded-lg
 const btnDanger = "bg-red-500/20 text-red-400 font-medium px-3 py-1.5 rounded-lg text-xs hover:bg-red-500/30 transition-all border border-red-500/30";
 
 // ============================================================
-// MEMBERS ADMIN
+// MEMBERS ADMIN — uses API CRUD
 // ============================================================
 function MembersAdmin() {
-  const { members, categories, trainingGroups, updateMembers } = useAster();
+  const { members, categories, addMember, editMember, deleteMember } = useAster();
   const [search, setSearch] = useState('');
-  const [editing, setEditing] = useState(null); // null = closed, {} = new, {id:...} = edit
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const filtered = members.filter(m =>
     !search || m.fullName.toLowerCase().includes(search.toLowerCase())
@@ -125,30 +126,32 @@ function MembersAdmin() {
     setEditing(m.id);
   };
 
-  const save = () => {
+  const save = async () => {
     if (!form.fullName.trim()) return;
-    let updated;
-    if (editing === 'new') {
-      const maxId = Math.max(0, ...members.map(m => m.id));
-      const newMember = {
-        ...form,
-        id: maxId + 1,
+    setSaving(true);
+    try {
+      const memberData = {
         name: form.name || form.fullName.split(' ')[0],
+        fullName: form.fullName,
         category: form.category || null,
         level: form.level || null,
         group: form.group || null,
+        trainingGroup: form.trainingGroup || null,
       };
-      updated = [...members, newMember];
-    } else {
-      updated = members.map(m => m.id === editing ? { ...m, ...form } : m);
+      if (editing === 'new') {
+        await addMember(memberData);
+      } else {
+        await editMember(editing, memberData);
+      }
+      setEditing(null);
+    } finally {
+      setSaving(false);
     }
-    updateMembers(updated);
-    setEditing(null);
   };
 
-  const remove = (id) => {
+  const remove = async (id) => {
     if (confirm('Obrisati članicu?')) {
-      updateMembers(members.filter(m => m.id !== id));
+      await deleteMember(id);
     }
   };
 
@@ -217,7 +220,7 @@ function MembersAdmin() {
             <input className={inputClass} value={form.group || ''} onChange={e => setForm({ ...form, group: e.target.value || null })} placeholder="npr. Grupa Pioniri 2" />
           </FormField>
           <div className="flex gap-3 mt-6">
-            <button onClick={save} className={btnPrimary}>Sačuvaj</button>
+            <button onClick={save} disabled={saving} className={btnPrimary}>{saving ? 'Čuvanje...' : 'Sačuvaj'}</button>
             <button onClick={() => setEditing(null)} className={btnSecondary}>Otkaži</button>
           </div>
         </Modal>
@@ -227,12 +230,13 @@ function MembersAdmin() {
 }
 
 // ============================================================
-// TRAINERS ADMIN
+// TRAINERS ADMIN — uses API CRUD
 // ============================================================
 function TrainersAdmin() {
-  const { trainers, updateTrainers } = useAster();
+  const { trainers, addTrainer, editTrainer, deleteTrainer } = useAster();
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const openNew = () => {
     setForm({ name: '', role: '', groups: [] });
@@ -244,23 +248,26 @@ function TrainersAdmin() {
     setEditing(t.id);
   };
 
-  const save = () => {
+  const save = async () => {
     if (!form.name.trim()) return;
-    const groups = (form.groupsText || '').split(',').map(s => s.trim()).filter(Boolean);
-    let updated;
-    if (editing === 'new') {
-      const maxId = Math.max(0, ...trainers.map(t => t.id));
-      updated = [...trainers, { id: maxId + 1, name: form.name, role: form.role, groups }];
-    } else {
-      updated = trainers.map(t => t.id === editing ? { ...t, name: form.name, role: form.role, groups } : t);
+    setSaving(true);
+    try {
+      const groups = (form.groupsText || '').split(',').map(s => s.trim()).filter(Boolean);
+      const trainerData = { name: form.name, role: form.role, groups };
+      if (editing === 'new') {
+        await addTrainer(trainerData);
+      } else {
+        await editTrainer(editing, trainerData);
+      }
+      setEditing(null);
+    } finally {
+      setSaving(false);
     }
-    updateTrainers(updated);
-    setEditing(null);
   };
 
-  const remove = (id) => {
+  const remove = async (id) => {
     if (confirm('Obrisati trenera?')) {
-      updateTrainers(trainers.filter(t => t.id !== id));
+      await deleteTrainer(id);
     }
   };
 
@@ -296,7 +303,7 @@ function TrainersAdmin() {
             <input className={inputClass} value={form.groupsText || ''} onChange={e => setForm({ ...form, groupsText: e.target.value })} placeholder="Djeca 1, Djeca 2" />
           </FormField>
           <div className="flex gap-3 mt-6">
-            <button onClick={save} className={btnPrimary}>Sačuvaj</button>
+            <button onClick={save} disabled={saving} className={btnPrimary}>{saving ? 'Čuvanje...' : 'Sačuvaj'}</button>
             <button onClick={() => setEditing(null)} className={btnSecondary}>Otkaži</button>
           </div>
         </Modal>
@@ -306,12 +313,13 @@ function TrainersAdmin() {
 }
 
 // ============================================================
-// GROUPS ADMIN (with color picker)
+// GROUPS ADMIN — uses API CRUD
 // ============================================================
 function GroupsAdmin() {
-  const { trainingGroups, updateGroups } = useAster();
+  const { trainingGroups, addGroup, editGroup, deleteGroup } = useAster();
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const openNew = () => {
     setForm({ id: '', name: '', level: '', days: [], time: '', color: '#f59e0b' });
@@ -323,31 +331,34 @@ function GroupsAdmin() {
     setEditing(g.id);
   };
 
-  const save = () => {
+  const save = async () => {
     if (!form.name.trim()) return;
-    const days = (form.daysText || '').split(',').map(s => s.trim()).filter(Boolean);
-    const groupData = {
-      id: form.id || form.name.toLowerCase().replace(/\s+/g, '_'),
-      name: form.name,
-      level: form.level || '',
-      days,
-      time: form.time || '',
-      color: form.color || '#6b7280',
-      bgColor: (form.color || '#6b7280') + '15',
-    };
-    let updated;
-    if (editing === 'new') {
-      updated = [...trainingGroups, groupData];
-    } else {
-      updated = trainingGroups.map(g => g.id === editing ? { ...g, ...groupData } : g);
+    setSaving(true);
+    try {
+      const days = (form.daysText || '').split(',').map(s => s.trim()).filter(Boolean);
+      const groupData = {
+        id: form.id || form.name.toLowerCase().replace(/\s+/g, '_'),
+        name: form.name,
+        level: form.level || '',
+        days,
+        time: form.time || '',
+        color: form.color || '#6b7280',
+        bgColor: (form.color || '#6b7280') + '15',
+      };
+      if (editing === 'new') {
+        await addGroup(groupData);
+      } else {
+        await editGroup(editing, groupData);
+      }
+      setEditing(null);
+    } finally {
+      setSaving(false);
     }
-    updateGroups(updated);
-    setEditing(null);
   };
 
-  const remove = (id) => {
+  const remove = async (id) => {
     if (confirm('Obrisati grupu?')) {
-      updateGroups(trainingGroups.filter(g => g.id !== id));
+      await deleteGroup(id);
     }
   };
 
@@ -398,7 +409,7 @@ function GroupsAdmin() {
             </div>
           </FormField>
           <div className="flex gap-3 mt-6">
-            <button onClick={save} className={btnPrimary}>Sačuvaj</button>
+            <button onClick={save} disabled={saving} className={btnPrimary}>{saving ? 'Čuvanje...' : 'Sačuvaj'}</button>
             <button onClick={() => setEditing(null)} className={btnSecondary}>Otkaži</button>
           </div>
         </Modal>
@@ -408,13 +419,14 @@ function GroupsAdmin() {
 }
 
 // ============================================================
-// SCHEDULE ADMIN
+// SCHEDULE ADMIN — uses API CRUD
 // ============================================================
 function ScheduleAdmin() {
-  const { weeklySchedule, trainingGroups, members, updateSchedule, dayNames } = useAster();
+  const { weeklySchedule, trainingGroups, members, dayNames, addSlot, editSlot, deleteSlot } = useAster();
   const [filterDay, setFilterDay] = useState('all');
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const filtered = filterDay === 'all' ? weeklySchedule : weeklySchedule.filter(s => s.day === filterDay);
   const sorted = [...filtered].sort((a, b) => {
@@ -428,44 +440,43 @@ function ScheduleAdmin() {
     setEditing('new');
   };
 
-  const openEdit = (slot, idx) => {
-    setForm({ ...slot, _idx: idx });
-    setEditing(idx);
+  const openEdit = (slot) => {
+    setForm({ ...slot });
+    setEditing(slot.id);
   };
 
-  const save = () => {
+  const save = async () => {
     if (!form.time) return;
-    const slot = {
-      day: form.day,
-      time: form.time,
-      duration: parseInt(form.duration) || 60,
-      type: form.type,
-    };
-    if (form.type === 'group') {
-      slot.group = form.group;
-    } else {
-      slot.student = form.student;
-      slot.dance = form.dance || null;
+    setSaving(true);
+    try {
+      const slot = {
+        day: form.day,
+        time: form.time,
+        duration: parseInt(form.duration) || 60,
+        type: form.type,
+      };
+      if (form.type === 'group') {
+        slot.group = form.group;
+      } else {
+        slot.student = form.student;
+        slot.dance = form.dance || null;
+      }
+      if (editing === 'new') {
+        await addSlot(slot);
+      } else {
+        await editSlot(editing, slot);
+      }
+      setEditing(null);
+    } finally {
+      setSaving(false);
     }
-
-    let updated;
-    if (editing === 'new') {
-      updated = [...weeklySchedule, slot];
-    } else {
-      updated = weeklySchedule.map((s, i) => i === editing ? slot : s);
-    }
-    updateSchedule(updated);
-    setEditing(null);
   };
 
-  const remove = (globalIdx) => {
+  const remove = async (id) => {
     if (confirm('Obrisati termin?')) {
-      updateSchedule(weeklySchedule.filter((_, i) => i !== globalIdx));
+      await deleteSlot(id);
     }
   };
-
-  // Map filtered indices back to global indices
-  const getGlobalIndex = (slot) => weeklySchedule.indexOf(slot);
 
   return (
     <div>
@@ -480,10 +491,9 @@ function ScheduleAdmin() {
 
       <div className="space-y-1">
         {sorted.map((slot) => {
-          const gi = getGlobalIndex(slot);
           const groupInfo = slot.type === 'group' ? trainingGroups.find(g => g.id === slot.group) : null;
           return (
-            <div key={gi} className="flex items-center gap-3 bg-gray-800/40 rounded-lg px-4 py-2.5 border border-gray-800">
+            <div key={slot.id} className="flex items-center gap-3 bg-gray-800/40 rounded-lg px-4 py-2.5 border border-gray-800">
               <span className="text-xs font-mono font-bold text-gray-500 w-10">{slot.day}</span>
               <span className="text-sm font-mono font-bold text-gray-300 w-14">{slot.time}</span>
               {slot.type === 'group' ? (
@@ -498,8 +508,8 @@ function ScheduleAdmin() {
                   <span className="text-xs text-gray-500 ml-2">{slot.duration} min · Individualni</span>
                 </div>
               )}
-              <button onClick={() => openEdit(slot, gi)} className="text-xs text-gray-500 hover:text-orange-400">Uredi</button>
-              <button onClick={() => remove(gi)} className="text-xs text-gray-600 hover:text-red-400">✕</button>
+              <button onClick={() => openEdit(slot)} className="text-xs text-gray-500 hover:text-orange-400">Uredi</button>
+              <button onClick={() => remove(slot.id)} className="text-xs text-gray-600 hover:text-red-400">✕</button>
             </div>
           );
         })}
@@ -551,7 +561,7 @@ function ScheduleAdmin() {
           )}
 
           <div className="flex gap-3 mt-6">
-            <button onClick={save} className={btnPrimary}>Sačuvaj</button>
+            <button onClick={save} disabled={saving} className={btnPrimary}>{saving ? 'Čuvanje...' : 'Sačuvaj'}</button>
             <button onClick={() => setEditing(null)} className={btnSecondary}>Otkaži</button>
           </div>
         </Modal>
@@ -561,12 +571,13 @@ function ScheduleAdmin() {
 }
 
 // ============================================================
-// COMPETITIONS ADMIN
+// COMPETITIONS ADMIN — uses API CRUD
 // ============================================================
 function CompetitionsAdmin() {
-  const { competitions, updateCompetitions } = useAster();
+  const { competitions, addCompetition, editCompetition, deleteCompetition } = useAster();
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const sorted = [...competitions].sort((a, b) => a.date.localeCompare(b.date));
 
@@ -580,23 +591,37 @@ function CompetitionsAdmin() {
     setEditing(c.id);
   };
 
-  const save = () => {
+  const save = async () => {
     if (!form.date || !form.city) return;
-    let updated;
-    if (editing === 'new') {
-      const maxId = Math.max(0, ...competitions.map(c => c.id));
-      const newComp = { ...form, id: maxId + 1, endDate: form.endDate || undefined, highlight: form.highlight || false };
-      updated = [...competitions, newComp];
-    } else {
-      updated = competitions.map(c => c.id === editing ? { ...c, ...form } : c);
+    setSaving(true);
+    try {
+      const compData = {
+        date: form.date,
+        endDate: form.endDate || null,
+        city: form.city,
+        country: form.country || null,
+        flag: form.flag || null,
+        type: form.type || null,
+        org: form.org || null,
+        categories: form.categories || null,
+        venue: form.venue || null,
+        note: form.note || null,
+        highlight: form.highlight || false,
+      };
+      if (editing === 'new') {
+        await addCompetition(compData);
+      } else {
+        await editCompetition(editing, compData);
+      }
+      setEditing(null);
+    } finally {
+      setSaving(false);
     }
-    updateCompetitions(updated);
-    setEditing(null);
   };
 
-  const remove = (id) => {
+  const remove = async (id) => {
     if (confirm('Obrisati takmičenje?')) {
-      updateCompetitions(competitions.filter(c => c.id !== id));
+      await deleteCompetition(id);
     }
   };
 
@@ -690,7 +715,7 @@ function CompetitionsAdmin() {
             <input className={inputClass} value={form.note || ''} onChange={e => setForm({ ...form, note: e.target.value })} />
           </FormField>
           <div className="flex gap-3 mt-6">
-            <button onClick={save} className={btnPrimary}>Sačuvaj</button>
+            <button onClick={save} disabled={saving} className={btnPrimary}>{saving ? 'Čuvanje...' : 'Sačuvaj'}</button>
             <button onClick={() => setEditing(null)} className={btnSecondary}>Otkaži</button>
           </div>
         </Modal>
@@ -700,16 +725,22 @@ function CompetitionsAdmin() {
 }
 
 // ============================================================
-// ANNOUNCEMENTS ADMIN
+// ANNOUNCEMENTS ADMIN — uses API CRUD
 // ============================================================
 function AnnouncementsAdmin() {
   const { announcements, addAnnouncement, removeAnnouncement } = useAster();
   const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
 
-  const send = () => {
+  const send = async () => {
     if (!text.trim()) return;
-    addAnnouncement(text.trim());
-    setText('');
+    setSending(true);
+    try {
+      await addAnnouncement(text.trim());
+      setText('');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -719,9 +750,9 @@ function AnnouncementsAdmin() {
         <div className="flex gap-3">
           <input className={inputClass + " flex-1"} value={text} onChange={e => setText(e.target.value)} placeholder="Unesite poruku za roditelje..."
             onKeyDown={e => e.key === 'Enter' && send()} />
-          <button onClick={send} className={btnPrimary}>Pošalji</button>
+          <button onClick={send} disabled={sending} className={btnPrimary}>{sending ? '...' : 'Pošalji'}</button>
         </div>
-        <p className="text-xs text-gray-600 mt-2">Obavijesti se prikazuju na glavnoj stranici. Prikazuju se zadnje 3 obavijesti.</p>
+        <p className="text-xs text-gray-600 mt-2">Obavijesti se prikazuju na glavnoj stranici svim korisnicima na svim uređajima.</p>
       </div>
 
       <h3 className="text-sm font-semibold text-gray-400 mb-3">Aktivne obavijesti ({announcements.length})</h3>
@@ -749,14 +780,7 @@ function AnnouncementsAdmin() {
 // MAIN ADMIN CONTENT
 // ============================================================
 function AdminContent() {
-  const { resetToDefaults } = useAster();
   const [activeTab, setActiveTab] = useState('members');
-
-  const handleReset = () => {
-    if (confirm('Resetovati sve podatke na originalne vrijednosti? Ovo će obrisati sve promjene.')) {
-      resetToDefaults();
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
@@ -765,7 +789,10 @@ function AdminContent() {
           <Link href="/aster" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-orange-400 transition-colors">
             ← Nazad na Aster
           </Link>
-          <button onClick={handleReset} className={btnDanger}>↻ Reset na default</button>
+          <span className="text-xs text-green-400/70 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+            Povezano na server
+          </span>
         </div>
 
         <header className="mb-8">
@@ -775,7 +802,7 @@ function AdminContent() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
-              <p className="text-sm text-gray-500">Upravljanje podacima Aster PK</p>
+              <p className="text-sm text-gray-500">Upravljanje podacima Aster PK · Sve promjene su vidljive na svim uređajima</p>
             </div>
           </div>
 
@@ -803,7 +830,7 @@ function AdminContent() {
         </main>
 
         <footer className="mt-12 pt-6 border-t border-gray-800/50 text-center">
-          <p className="text-xs text-gray-600">Aster Admin Panel · Podaci se čuvaju u lokalnom pregledniku (localStorage)</p>
+          <p className="text-xs text-gray-600">Aster Admin Panel · Podaci se čuvaju na Goldenboy serveru (SQLite)</p>
         </footer>
       </div>
     </div>

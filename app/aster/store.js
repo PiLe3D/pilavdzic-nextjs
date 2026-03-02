@@ -5,7 +5,7 @@ import * as defaults from './data';
 
 const AsterContext = createContext(null);
 
-const API_BASE = 'http://159.223.22.99/api/aster';
+const API_BASE = 'https://api.pilavdzic.org/api/aster';
 
 // ============================================================
 // API HELPER
